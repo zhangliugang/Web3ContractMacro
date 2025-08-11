@@ -9,7 +9,7 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftParser
 
-func generateFunctionInternalTypes(_ fns: [ABI.Element.Function]) -> [DeclSyntax] {
+func generateFunctionInternalTypes(_ fns: [ABI.Element.Function], modifier: DeclModifierListSyntax) -> [DeclSyntax] {
     let functionOutputs = fns.flatMap(\.outputs).map(\.type)
     let outputStructs = parseStructsFrom(functionOutputs)
 
@@ -26,12 +26,13 @@ func generateFunctionInternalTypes(_ fns: [ABI.Element.Function]) -> [DeclSyntax
 
     let namespaceSyntax = namespaces.map { namespace in
         let structSyntsxs = outputStructs.filter({ $0.key.namespace == namespace }).map { key, value in
-            generateInternalType(key.identifier, output: value)
+            generateInternalType(key.identifier, output: value, modifier: modifier)
         }
 
         let memberBlock = buildMemberList(structSyntsxs)
         return DeclSyntax(EnumDeclSyntax(
             leadingTrivia: .newline,
+            modifiers: modifier,
             name: .identifier(namespace),
             memberBlock: memberBlock,
             trailingTrivia: .newline
@@ -39,7 +40,7 @@ func generateFunctionInternalTypes(_ fns: [ABI.Element.Function]) -> [DeclSyntax
     }
     let internalTypesSyntax = internalTypes.flatMap { typename in
         return outputStructs.filter({ $0.key.namespace == nil && $0.key.identifier == typename }).map { key, value in
-            generateInternalType(key.identifier, output: value)
+            generateInternalType(key.identifier, output: value, modifier: modifier)
         }
     }
 
@@ -62,7 +63,7 @@ func parseStructsFrom(_ outs: [ABI.Element.ParameterType]) -> [ABI.StructName: [
     return result
 }
 
-func generateInternalType(_ name: String, output: [ABI.Element.InOut]) -> DeclSyntax {
+func generateInternalType(_ name: String, output: [ABI.Element.InOut], modifier: DeclModifierListSyntax) -> DeclSyntax {
     let properties: [DeclSyntax] = output.map { input in
         "let \(raw: input.name): \(raw: input.type.typeName)"
     }
@@ -70,6 +71,7 @@ func generateInternalType(_ name: String, output: [ABI.Element.InOut]) -> DeclSy
     return DeclSyntax(
         StructDeclSyntax(
             leadingTrivia: Trivia.newline,
+            modifiers: modifier,
             name: .identifier(name),
             memberBlock: memberBlock,
             trailingTrivia: .newline
@@ -77,7 +79,7 @@ func generateInternalType(_ name: String, output: [ABI.Element.InOut]) -> DeclSy
     )
 }
 
-func generateFunction(_ fn: ABI.Element.Function) -> DeclSyntax? {
+func generateFunction(_ fn: ABI.Element.Function, modifier: DeclModifierListSyntax) -> DeclSyntax? {
     guard let name = fn.name else { return nil }
 
     let parameters = fn.inputs.map { input in
@@ -100,6 +102,7 @@ func generateFunction(_ fn: ABI.Element.Function) -> DeclSyntax? {
 
     return DeclSyntax(FunctionDeclSyntax(
         leadingTrivia: .newline,
+        modifiers: modifier,
         funcKeyword: .keyword(.func, trailingTrivia: .space),
         name: .identifier(name),
         signature: FunctionSignatureSyntax(

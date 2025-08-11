@@ -34,3 +34,13 @@ func buildInheritanceList(_ inheritance: [String]) -> InheritanceClauseSyntax {
         })
     )
 }
+
+func buildModifiers(_ keywords: [Keyword]) -> DeclModifierListSyntax {
+    let mods = keywords.map { keyword in
+        DeclModifierSyntax(
+            name: .keyword(keyword, trailingTrivia: .space),
+            detail: nil
+        )
+    }
+    return DeclModifierListSyntax(mods)
+}

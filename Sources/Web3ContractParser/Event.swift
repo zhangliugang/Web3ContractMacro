@@ -7,7 +7,7 @@
 
 import SwiftSyntax
 
-func generateEventSyntax(_ event: ABI.Element.Event) -> DeclSyntax {
+func generateEventSyntax(_ event: ABI.Element.Event, modifier: DeclModifierListSyntax) -> DeclSyntax {
     let properties: [DeclSyntax] = event.inputs.map { input in
         "let \(raw: input.name): \(raw: input.type.typeName)"
     }
@@ -16,6 +16,7 @@ func generateEventSyntax(_ event: ABI.Element.Event) -> DeclSyntax {
     return DeclSyntax(
         StructDeclSyntax(
             leadingTrivia: Trivia.newline,
+            modifiers: modifier,
             name: .identifier(event.name),
             memberBlock: memberBlock,
             trailingTrivia: Trivia.newline

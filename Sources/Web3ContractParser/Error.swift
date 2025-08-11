@@ -7,7 +7,7 @@
 
 import SwiftSyntax
 
-func generateErrorSyntax(_ err: ABI.Element.EthError) -> DeclSyntax {
+func generateErrorSyntax(_ err: ABI.Element.EthError, modifier: DeclModifierListSyntax) -> DeclSyntax {
     let properties: [DeclSyntax] = err.inputs.map { input in
         "let \(raw: input.name): \(raw: input.type.typeName)"
     }
@@ -15,6 +15,7 @@ func generateErrorSyntax(_ err: ABI.Element.EthError) -> DeclSyntax {
     return DeclSyntax(
         StructDeclSyntax(
             leadingTrivia: Trivia.newline,
+            modifiers: modifier,
             name: .identifier(err.name),
             inheritanceClause: buildInheritanceList(["Error"]),
             memberBlock: memberBlock,
