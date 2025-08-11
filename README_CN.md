@@ -1,18 +1,18 @@
-## Code generation tool for [Web3Swift](https://github.com/web3swift-team/web3swift), used to generate type-safe contract code.
+## 适用于 [Web3Swift](https://github.com/web3swift-team/web3swift) 的代码生成工具，用于生成类型安全的合约代码。
 
-## Usage
-Import via SPM in Xcode:
+## 使用
+在 Xcode 中通过 SPM 导入。
 ```
 .package(url: "https://github.com/zhangliugang/Web3ContractMacro", from: "1.0.0"),
 ```
 
-In the File menu, select CodeGenCommand, or right-click on the Project and choose CodeGenCommand, then click confirm.
+在文件菜单中选择 CodeGenCommand，或者右键点击 Project 然后选择 CodeGenCommand，然后点击确认。
 
-This will automatically generate contract access code based on the provided contract ABI file.
+这将根据提供的合约 ABI 文件自动生成用于访问合约的代码
 
 ![](./Documentation/Images/screen.png)
 
-## Example
+## 示例
 
 erc20.json
 ```json
