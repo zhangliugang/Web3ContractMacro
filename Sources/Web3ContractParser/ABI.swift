@@ -297,31 +297,60 @@ extension ABI.Element {
             }
         }
 
-//        var emptyValue: Any {
-//            switch self {
-//            case .uint(bits: _):
-//                return BigUInt(0)
-//            case .int(bits: _):
-//                return BigUInt(0)
-//            case .address:
-//                return EthereumAddress("0x0000000000000000000000000000000000000000")!
-//            case .function:
-//                return Data(repeating: 0x00, count: 24)
-//            case .bool:
-//                return false
-//            case .bytes(length: let length):
-//                return Data(repeating: 0x00, count: Int(length))
-//            case .array(type: let type, length: let length):
-//                let emptyValueOfType = type.emptyValue
-//                return Array.init(repeating: emptyValueOfType, count: Int(length))
-//            case .dynamicBytes:
-//                return Data()
-//            case .string:
-//                return ""
-//            case .tuple(types: _):
-//                return [Any]()
-//            }
-//        }
+        var typeName: String {
+            switch self {
+            case .uint:
+                "BigUInt"
+            case .int:
+                "BigInt"
+            case .address:
+                "EthereumAddress"
+            case .function:
+                ""
+            case .bool:
+                "Bool"
+            case .bytes:
+                "Data"
+            case .array(let type, _):
+                "[\(type.typeName)]"
+            case .dynamicBytes:
+                "Data"
+            case .string:
+                "String"
+            case .tuple(let types, _):
+                "(" + types.map(\.type).map(\.typeName).joined(separator: ", ") + ")"
+            }
+        }
+
+        var abiRepresentation: String {
+            switch self {
+            case .uint(let bits):
+                return "uint\(bits)"
+            case .int(let bits):
+                return "int\(bits)"
+            case .address:
+                return "address"
+            case .bool:
+                return "bool"
+            case .bytes(let length):
+                return "bytes\(length)"
+            case .dynamicBytes:
+                return "bytes"
+            case .function:
+                return "function"
+            case .array(type: let type, length: let length):
+                if length == 0 {
+                    return  "\(type.abiRepresentation)[]"
+                }
+                return "\(type.abiRepresentation)[\(length)]"
+            case .tuple(types: let types, _):
+                let typesRepresentation = types.map(\.type).map(\.abiRepresentation)
+                let typesJoined = typesRepresentation.joined(separator: ",")
+                return "(\(typesJoined))"
+            case .string:
+                return "string"
+            }
+        }
 
         var arraySize: ABI.Element.ArraySize {
             switch self {
