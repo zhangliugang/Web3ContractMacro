@@ -13,7 +13,7 @@ let package = Package(
             targets: ["Web3ContractMacro"]
         ),
         .executable(name: "Web3ContractCodeGen", targets: ["Web3ContractCodeGen"]),
-        .plugin(name: "CodeGenPlugin", targets: ["CodeGenPlugin"])
+        .plugin(name: "CodeGenCommand", targets: ["CodeGenCommand"])
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-syntax.git", from: "509.0.0"),
@@ -42,6 +42,18 @@ let package = Package(
                 .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
             ]
         ),
-        .plugin(name: "CodeGenPlugin", capability: .buildTool(), dependencies: ["Web3ContractCodeGen"]),
+        .plugin(
+            name: "CodeGenCommand",
+            capability: .command(
+                intent: .custom(
+                    verb: "GenerateContractCode",
+                    description: "GenerateContractCode"
+                ),
+                permissions: [
+                    .writeToPackageDirectory(reason: "Modifies Xcode project to fix package reference for plugins")
+                ]
+            ),
+            dependencies: ["Web3ContractCodeGen"]
+        )
     ]
 )

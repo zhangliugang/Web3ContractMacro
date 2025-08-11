@@ -8,7 +8,7 @@
 import Foundation
 import SwiftSyntax
 
-public func parseAbiString(_ string: String, accessLevel: String = "internal") throws -> [DeclSyntax] {
+public func parseAbiString(_ string: String, accessLevel: String = "public") throws -> [DeclSyntax] {
     guard let keyword = switch accessLevel {
     case "public": Keyword.public
     case "private": Keyword.private
@@ -27,20 +27,14 @@ public func parseAbiString(_ string: String, accessLevel: String = "internal") t
         return try record.parse()
     })
 
-    let constants: [DeclSyntax] = [
-        """
-        private let contract: EthereumContract
-        private let contractAddress: EthereumAddress
-        private var web3: Web3
-        """,
-        """
-        init(address: EthereumAddress, web3: Web3) {
-            self.contractAddress = address
-            self.web3 = web3
-            self.contract = try! EthereumContract(abiString)
-        }
-        """
+    let constants : [DeclSyntax] = [
+        buildMember(key: "contract", type: "EthereumContract", modifier: modifierList),
+        buildMember(key: "contractAddress", type: "EthereumAddress", modifier: modifierList),
+        buildMember(key: "web3", type: "Web3", modifier: modifierList)
+            .with(\.trailingTrivia, .newlines(2)),
     ]
+
+    let initFunc = generateInit().with(\.trailingTrivia, .newline)
 
     let errors = abiElements.compactMap { element in
         if case let .error(err) = element {
@@ -70,5 +64,15 @@ public func parseAbiString(_ string: String, accessLevel: String = "internal") t
         return nil
     }
 
-    return constants + internalTypes + events + errors + fns
+    return constants + [initFunc] + internalTypes + events + errors + fns
+}
+
+func generateInit() -> DeclSyntax {
+    """
+    init(abiString: String, address: EthereumAddress, web3: Web3) {
+        self.contractAddress = address
+        self.web3 = web3
+        self.contract = try! EthereumContract(abiString)
+    }
+    """
 }

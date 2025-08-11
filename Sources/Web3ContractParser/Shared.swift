@@ -7,8 +7,24 @@
 
 import SwiftSyntax
 
-func buildMember(key: String, type: String) -> DeclSyntax {
-    return "let \(raw: key): \(raw: type)"
+func buildMember(key: String, type: String, modifier: DeclModifierListSyntax) -> DeclSyntax {
+    DeclSyntax (
+        VariableDeclSyntax(
+            modifiers: modifier,
+            bindingSpecifier: .keyword(.let),
+            bindings: PatternBindingListSyntax {
+                PatternBindingSyntax(
+                    pattern: IdentifierPatternSyntax(identifier: .identifier(key)),
+                    typeAnnotation: TypeAnnotationSyntax(
+                        colon: .colonToken(),
+                        type: IdentifierTypeSyntax(
+                            name: TokenSyntax.identifier(type),
+                        )
+                    )
+                )
+            }
+        )
+    )
 }
 
 func buildMemberList(_ syntaxs: [DeclSyntax]) -> MemberBlockSyntax {

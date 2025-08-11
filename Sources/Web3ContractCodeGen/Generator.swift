@@ -27,10 +27,10 @@ struct Generator: ParsableCommand {
         let inputFiles = try resolveInputFiles(from: inputs)
 
         let generatedFiles: [(filename: String, content: String)] = try inputFiles.map { path in
-                let basename = URL(fileURLWithPath: path).deletingPathExtension().lastPathComponent
-                let code = try generateSwiftCode(from: path)
-                return ("\(basename).swift", code)
-            }
+            let basename = URL(fileURLWithPath: path).deletingPathExtension().lastPathComponent
+            let code = try generateSwiftCode(from: path)
+            return ("\(basename).swift", code)
+        }
         try writeOutput(generatedFiles)
     }
 
@@ -51,21 +51,30 @@ struct Generator: ParsableCommand {
             }
         }
 
-        guard !files.isEmpty else {
-            throw ValidationError("No valid JSON input files found.")
-        }
-
         return files
     }
 
     func generateSwiftCode(from jsonPath: String) throws -> String {
+        let basename = URL(fileURLWithPath: jsonPath).deletingPathExtension().lastPathComponent.split(separator: ".").first!
+        let clsName = basename[basename.startIndex].uppercased() + basename[basename.index(after: basename.startIndex)..<basename.endIndex]
+
         let json = try String(contentsOfFile: jsonPath)
+
         let syntaxs = try parseAbiString(json)
         let codeBlocks = syntaxs.map { decl in
-            CodeBlockItemSyntax(item: .decl(decl))
+            MemberBlockItemSyntax(decl: (decl))
         }
+        let clsSyntax = ClassDeclSyntax(
+            name: .identifier(clsName),
+            memberBlock: MemberBlockSyntax(members: MemberBlockItemListSyntax(codeBlocks))
+        ).as(DeclSyntax.self)!
+
         let sourceFile = SourceFileSyntax(
-            statements: CodeBlockItemListSyntax(codeBlocks),
+            statements: CodeBlockItemListSyntax([
+                CodeBlockItemSyntax(item: .decl("import web3swift")),
+                CodeBlockItemSyntax(item: .decl("import Web3Core")).with(\.trailingTrivia, .newlines(2)),
+                CodeBlockItemSyntax(item: .decl(clsSyntax))
+            ]),
             endOfFileToken: .endOfFileToken()
         )
 
@@ -77,7 +86,7 @@ struct Generator: ParsableCommand {
             let url = URL(fileURLWithPath: outputPath)
             let isDir = (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
 
-            if files.count > 1 && !isDir {
+            if !isDir {
                 // Merge all into one file
                 let merged = files.map { $0.content }.joined(separator: "\n\n")
                 try merged.write(toFile: outputPath, atomically: true, encoding: .utf8)
